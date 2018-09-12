@@ -1,0 +1,116 @@
+     1                                  [bits 64]
+     2                                  
+     3 00000000 00<rept>                termios:        times 36 db 0
+     4                                  stdin:          equ 0
+     5                                  ICANON:         equ 1<<1
+     6                                  ECHO:           equ 1<<3
+     7                                  
+     8                                  canonical_off:
+     9                                  fin:		
+    10 00000024 E850000000                      call read_stdin_termios
+    11                                  
+    12                                          ; clear canonical bit in local mode flags
+    13 00000029 50                              push rax
+    14 0000002A B802000000                      mov eax, ICANON
+    15 0000002F F7D0                            not eax
+    16                                          ;and [termios+12], eax
+    17 00000031 58                              pop rax
+    18                                  
+    19 00000032 E861000000                      call write_stdin_termios
+    20 00000037 C3                              ret
+    21                                  
+    22                                  echo_off:
+    23 00000038 E83C000000                      call read_stdin_termios
+    24                                  
+    25                                          ; clear echo bit in local mode flags
+    26 0000003D 50                              push rax
+    27 0000003E B808000000                      mov eax, ECHO
+    28 00000043 F7D0                            not eax
+    29 00000045 210425[0C000000]                and [termios+12], eax
+    30 0000004C 58                              pop rax
+    31                                  
+    32 0000004D E846000000                      call write_stdin_termios
+    33 00000052 C3                              ret
+    34                                  
+    35                                  canonical_on:
+    36 00000053 E821000000                      call read_stdin_termios
+    37                                  
+    38                                          ; set canonical bit in local mode flags
+    39 00000058 830C25[0C000000]02              or dword [termios+12], ICANON
+    40                                  
+    41 00000060 E833000000                      call write_stdin_termios
+    42 00000065 C3                              ret
+    43                                  
+    44                                  echo_on:
+    45 00000066 E80E000000                      call read_stdin_termios
+    46                                  
+    47                                          ; set echo bit in local mode flags
+    48 0000006B 830C25[0C000000]08              or dword [termios+12], ECHO
+    49                                  
+    50 00000073 E820000000                      call write_stdin_termios
+    51 00000078 C3                              ret
+    52                                  
+    53                                  read_stdin_termios:
+    54 00000079 50                              push rax
+    55 0000007A 53                              push rbx
+    56 0000007B 51                              push rcx
+    57 0000007C 52                              push rdx
+    58                                  
+    59 0000007D B836000000                      mov eax, 36h
+    60 00000082 BB00000000                      mov ebx, stdin
+    61 00000087 B901540000                      mov ecx, 5401h
+    62 0000008C BA[00000000]                    mov edx, termios
+    63 00000091 CD80                            int 80h
+    64                                  
+    65 00000093 5A                              pop rdx
+    66 00000094 59                              pop rcx
+    67 00000095 5B                              pop rbx
+    68 00000096 58                              pop rax
+    69 00000097 C3                              ret
+    70                                  
+    71                                  write_stdin_termios:
+    72 00000098 50                              push rax
+    73 00000099 53                              push rbx
+    74 0000009A 51                              push rcx
+    75 0000009B 52                              push rdx
+    76                                  
+    77 0000009C B836000000                      mov eax, 36h
+    78 000000A1 BB00000000                      mov ebx, stdin
+    79 000000A6 B902540000                      mov ecx, 5402h
+    80 000000AB BA[00000000]                    mov edx, termios
+    81 000000B0 CD80                            int 80h
+    82                                  
+    83 000000B2 5A                              pop rdx
+    84 000000B3 59                              pop rcx
+    85 000000B4 5B                              pop rbx
+    86 000000B5 58                              pop rax
+    87 000000B6 C3                              ret
+    88                                          
+    89                                  section .bss
+    90 00000000 <res 00000001>          	num resb 1
+    91                                          
+    92                                  section .text
+    93                                  
+    94                                  	global _start
+    95                                  	
+    96                                  _start:
+    97                                  main:
+    98 000000B7 E868FFFFFF              	call canonical_off
+    99 000000BC B803000000              	mov eax, 3
+   100 000000C1 BB02000000              	mov ebx, 2
+   101 000000C6 B9[00000000]            	mov ecx, num
+   102 000000CB BA01000000              	mov edx, 1
+   103                                  	
+   104 000000D0 CD80                    	int 80h
+   105                                  	
+   106 000000D2 B804000000              	mov eax, 4
+   107 000000D7 BB01000000              	mov ebx, 1
+   108 000000DC B920000000              	mov ecx, 32
+   109 000000E1 BA01000000              	mov edx, 1
+   110 000000E6 CD80                    	int 80h
+   111                                  	
+   112 000000E8 B801000000              	mov rax, 1
+   113 000000ED BB00000000              	mov rbx, 0
+   114                                  	
+   115 000000F2 CD80                    	int 0x80
+   116                                  	
