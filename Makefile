@@ -11,5 +11,5 @@ snake.o:snake.asm
 	nasm -felf64 snake.asm
     
 clean:
-	rm --force snake.o snake
+	rm --force snake.o snake snake_dbg snake_dbg.o
 	

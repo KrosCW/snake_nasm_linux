@@ -94,8 +94,6 @@ write_stdin_termios:
 
 _start:
 main:
-	mov ax,cs
-	mov ds,ax
 	call canonical_off
 	mov eax, 3
 	mov ebx, 2
