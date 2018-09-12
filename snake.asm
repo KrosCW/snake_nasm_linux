@@ -1,9 +1,14 @@
 [bits 64]
 
+section		.data
 termios:        times 36 db 0
 stdin:          equ 0
 ICANON:         equ 1<<1
 ECHO:           equ 1<<3
+num resb 1
+
+section		.text
+	    global _start
 
 canonical_off:
 fin:		
@@ -13,7 +18,7 @@ fin:
         push rax
         mov eax, ICANON
         not eax
-        ;and [termios+12], eax
+        and [termios+12], eax
         pop rax
 
         call write_stdin_termios
@@ -86,13 +91,7 @@ write_stdin_termios:
         pop rax
         ret
         
-section .bss
-	num resb 1
-        
-section .text
 
-	global _start
-	
 _start:
 main:
 	call canonical_off
