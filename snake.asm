@@ -6,6 +6,7 @@ stdin:          equ 0
 ICANON:         equ 1<<1
 ECHO:           equ 1<<3
 num resb 1
+%include "const.txt"
 
 section		.text
 	    global _start
@@ -20,6 +21,9 @@ fin:
         not eax
         and [termios+12], eax
         pop rax
+        mov al,0
+        mov [termios+OFFSET+VMIN],al
+        mov [termios+OFFSET+VTIME],al
 
         call write_stdin_termios
         ret
@@ -95,12 +99,15 @@ write_stdin_termios:
 _start:
 main:
 	call canonical_off
-	mov eax, 3
+repeat:	mov eax, 3
 	mov ebx, 2
 	mov ecx, num
 	mov edx, 1
 	
 	int 80h
+	
+	cmp eax,0
+	je  repeat
 	
 	mov eax, 4
 	mov ebx, 1
