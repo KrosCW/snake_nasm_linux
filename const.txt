@@ -1,0 +1,4 @@
+VMIN:	equ 6
+VTIME:	equ 5
+OFFSET:	equ 17
+SIZE:	equ 1

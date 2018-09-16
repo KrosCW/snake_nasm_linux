@@ -1,6 +1,7 @@
 snake:	snake.o
 	ld -o snake snake.o
 	
+	
 snake_dbg:  snake_dbg.o
 	ld -o snake_dbg snake_dbg.o
 	
@@ -11,8 +12,8 @@ snake.o:	snake.asm const.txt
 	nasm -felf64 snake.asm
 	
 const.txt:	const.c
-	gcc -o const const.c
-	./const >const.txt
+	gcc -Wall -o const const.c
+	./const > const.txt
     
 clean:
 	rm --force snake.o snake snake_dbg snake_dbg.o
