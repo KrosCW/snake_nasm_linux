@@ -13,6 +13,7 @@ section		.data
 	border_body db 'X                                                          X', 10, 13
 	apple db '$'
 	snake_part db '***'
+	space db 32
 	
 ;test buttons
 	up db 'up' 
@@ -127,74 +128,606 @@ write_stdin_termios:
         pop rax
         ret
 
+;offset functions
 
-;main functions
+draw_head:
+	xor eax,eax
+	mov al, [head_y]
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add al, 48
+	add ah, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, [head_x]
+	mov ah, 0
+	div bl
+	add al, 48
+	add ah, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, snake_part
+	mov edx, 1
+	int 80h
+	ret
+
+new_snake_size:
+	add [snake_size], byte 1
+	jmp start_offset
+	ret
+	
+yes:
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, border
+	mov edx, 1
+	int 80h
+	ret
+
+
+
+next_down_down:
+	add eax, 60
+	inc byte [map+eax]
+	jmp next_offset_down
+	ret
+
+next_up_down:
+	sub eax, 60
+	inc byte [map+eax]
+	jmp next_offset_down
+	ret
+
+next_left_down:
+	dec eax
+	inc byte [map+eax]
+	jmp next_offset_down
+	ret
+
+next_right_down:
+	inc eax
+	inc byte [map+eax]
+	jmp next_offset_down
+	ret
+
+next_down_up:
+	add eax, 60
+	inc byte [map+eax]
+	jmp next_offset_up
+	ret
+
+next_up_up:
+	sub eax, 60
+	inc byte [map+eax]
+	jmp next_offset_up
+	ret
+
+next_left_up:
+	dec eax
+	inc byte [map+eax]
+	jmp next_offset_up
+	ret
+
+next_right_up:
+	inc eax
+	inc byte [map+eax]
+	jmp next_offset_up
+	ret
+
+
+next_down_left:
+	add eax, 60
+	inc byte [map+eax]
+	jmp next_offset_left
+	ret
+
+next_up_left:
+	sub eax, 60
+	inc byte [map+eax]
+	jmp next_offset_left
+	ret
+
+next_left_left:
+	dec eax
+	inc byte [map+eax]
+	jmp next_offset_left
+	ret
+
+next_right_left:
+	inc eax
+	inc byte [map+eax]
+	jmp next_offset_left
+	ret
+
+next_down_right:
+	add eax, 60
+	inc byte [map+eax]
+	jmp next_offset_right
+	ret
+
+next_up_right:
+	sub eax, 60
+	inc byte [map+eax]
+	jmp next_offset_right
+	ret
+
+next_left_right:
+	dec eax
+	inc byte [map+eax]
+	jmp next_offset_right
+	ret
+
+next_right_right:
+	inc eax
+	inc byte [map+eax]
+	jmp next_offset_right
+	ret
+
+
+next_down_zero:
+	add eax, 60
+	mov [map+eax], byte 0
+	
+		inc eax
+	mov bl, byte 60
+	div bl
+	add al, 1
+	add ah, 1
+	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, space
+	mov edx, 1
+	int 80h
+	
+	jmp offset_enabled
+	ret
+
+next_up_zero:
+	sub eax, 60
+	mov [map+eax], byte 0
+	
+		inc eax
+	mov bl, byte 60
+	div bl
+	add al, 1
+	add ah, 1
+	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, space
+	mov edx, 1
+	int 80h
+	
+	jmp offset_enabled
+	ret
+
+next_left_zero:
+	dec eax
+	mov [map+eax], byte 0
+	
+	inc eax
+	mov bl, byte 60
+	div bl
+	add al, 1
+	add ah, 1
+	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, space
+	mov edx, 1
+	int 80h
+	
+	jmp offset_enabled
+	ret
+
+next_right_zero:
+	inc eax
+	mov [map+eax], byte 0
+	
+	inc eax
+	mov bl, byte 60
+	div bl
+	add al, 1
+	add ah, 1
+	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, space
+	mov edx, 1
+	int 80h
+	
+	jmp offset_enabled
+	ret
+	
+	
+
+
+offset_up:
+	sub ax, 60 ;offset right
+	mov [map+eax], byte 1
+	mov cl, [snake_size-1]
+	mov ebx, 1
+	
+up_lp:
+	
+	cmp [map+eax+1], ebx
+	jz next_right_up
+	
+	cmp [map+eax-1], ebx
+	jz next_left_up
+	
+	cmp [map+eax-60], ebx
+	jz next_up_up
+	
+	cmp [map+eax+60], ebx
+	jz next_down_up
+	
+next_offset_up:
+
+	inc ebx
+
+	loop up_lp
+
+	inc ebx
+
+	cmp [map+eax+1], ebx
+	jz next_right_zero
+	
+	cmp [map+eax-1], ebx
+	jz next_left_zero	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_zero
+	
+	cmp [map+eax+60], ebx
+	jz next_down_zero
+
+	jmp offset_enabled
+	
+	ret
+
+
+offset_down:
+	add ax, 60 ;offset right
+	mov [map+eax], byte 1
+	mov cl, [snake_size-1]
+	
+down_lp:
+	
+	cmp [map+eax+1], ebx
+	jz next_right_down
+	
+	cmp [map+eax-1], ebx
+	jz next_left_down
+	
+	cmp [map+eax-60], ebx
+	jz next_up_down
+	
+	cmp [map+eax+60], ebx
+	jz next_down_down
+	
+next_offset_down:
+	
+	inc ebx	
+
+	loop down_lp
+	
+	inc ebx
+	
+	cmp [map+eax+1], ebx
+	jz next_right_zero
+	
+	cmp [map+eax-1], ebx
+	jz next_left_zero	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_zero
+	
+	cmp [map+eax+60], ebx
+	jz next_down_zero
+	
+	jmp offset_enabled
+	
+	ret
+
+offset_left:
+
+	sub ax, 1 ;offset right
+	mov [map+eax], byte 1
+	mov cl, [snake_size-1]
+	
+left_lp:
+	cmp [map+eax+1], ebx
+	jz next_right_left
+	
+	cmp [map+eax-1], ebx
+	jz next_left_left	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_left
+	
+	cmp [map+eax+60], ebx
+	jz next_down_left
+	
+next_offset_left:
+
+	inc ebx
+
+	loop left_lp
+	
+	inc ebx
+	
+	cmp [map+eax+1], ebx
+	jz next_right_zero
+	
+	cmp [map+eax-1], ebx
+	jz next_left_zero	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_zero
+	
+	cmp [map+eax+60], ebx
+	jz next_down_zero
+
+	jmp offset_enabled
+	
+	ret
+
+
+offset_right:
+	add ax, 1 ;offset right
+	mov [map+eax], byte 1
+	mov cl, [snake_size-1]
+	
+	
+right_lp:
+	
+	cmp [map+eax+1], ebx
+	jz next_right_right
+	
+	cmp [map+eax-1], ebx
+	jz next_left_right	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_right
+	
+	cmp [map+eax+60], ebx
+	jz next_down_right
+	
+next_offset_right:
+	
+	inc ebx
+	
+	loop right_lp
+	
+	inc ebx
+	
+	cmp [map+eax+1], ebx
+	jz next_right_zero
+	
+	cmp [map+eax-1], ebx
+	jz next_left_zero	
+	
+	cmp [map+eax-60], ebx
+	jz next_up_zero
+	
+	cmp [map+eax+60], ebx
+	jz next_down_zero
+	
+	jmp offset_enabled
+	
+	ret
+	
+	
+	
+offset:
+	call draw_head
+	
+	xor eax, eax
+	mov al, [head_y]
+	dec al
+	mov bl, 60
+	mul bl
+	xor ebx,ebx
+	mov bl, [head_x]
+	dec bx
+	add ax, bx
+	sub ax, 1
+	
+	
+	cmp [map+eax], byte 126
+	jz new_snake_size
+	
+	cmp [map+eax], byte 0
+	jnz exit
+
+	
+start_offset:
+
+
+
+	
+	cmp [key_data], byte 'w'
+	;jz offset_up
+	
+	cmp [key_data], byte 's'
+	;jz offset_down
+	
+	cmp [key_data], byte 'a'
+	;jz offset_left
+	
+	cmp [key_data], byte 'd'
+	;jz offset_right
+		
+offset_enabled:	
+	
+	
+	
+	ret
+
+
+
+
+;kyebord functions
 
 save_key_data_w:
-	mov eax, [readkey]
-	mov [key_data], eax
+	mov al, [readkey]
+	mov [key_data], al
 data_w:
-mov eax, 4
-mov ebx, 1
-mov ecx, up
-mov edx, 2
-int 80h
-	add [head_y], byte 1
+	sub [head_y], byte 1
 	
 	jmp new_coord_is_accept
 	ret
 
 save_key_data_s:
-	mov eax, [readkey]
-	mov [key_data], eax
+	mov al, [readkey]
+	mov [key_data], al
 data_s:
-mov eax, 4
-mov ebx, 1
-mov ecx, down
-mov edx, 4
-	int 80h
-	sub [head_y], byte 1
+	add [head_y], byte 1
 	jmp new_coord_is_accept
 	ret
 	
 save_key_data_a:
-	mov eax, [readkey]
-	mov [key_data], eax
+	mov al, [readkey]
+	mov [key_data], al
 data_a:
-mov eax, 4
-mov ebx, 1
-mov ecx, left
-mov edx, 4
-int 80h
-	add [head_x], byte 1
-	jmp new_coord_is_accept
-	ret
-	
-save_key_data_d:
-	mov eax, [readkey]
-	mov [key_data], eax
-data_d:
-mov eax, 4
-mov ebx, 1
-mov ecx, right
-mov edx, 5
-int 80h
 	sub [head_x], byte 1
 	jmp new_coord_is_accept
 	ret
 	
-prekey_is_w_s:
-mov eax, 4
-mov ebx, 1
-mov ecx, up
-mov edx, 2
-int 80h
-	cmp [readkey], byte 'w'
-	jz data_w
+save_key_data_d:	
+	mov al, [readkey]
+	mov [key_data], al
+data_d:
+	add [head_x], byte 1
+	jmp new_coord_is_accept
+	ret
 	
-	cmp [readkey], byte 's'
+prekey_is_w_s:
+	cmp [readkey], byte 'w'
 	jz data_s
 	
+	cmp [readkey], byte 's'
+	jz data_w
+;optimization down!	
 	cmp [readkey], byte 'a'
 	jz save_key_data_a
 	
@@ -204,11 +737,6 @@ int 80h
 	ret
 
 prekey_is_a_d:
-mov eax, 4
-mov ebx, 1
-mov ecx, right
-mov edx, 5
-int 80h
 	cmp [readkey], byte 'w'
 	jz save_key_data_w
 	
@@ -216,10 +744,10 @@ int 80h
 	jz save_key_data_s
 	
 	cmp [readkey], byte 'a'
-	jz data_a
+	jz data_d
 	
 	cmp [readkey], byte 'd'
-	jz data_d
+	jz data_a
 	
 	ret
 	
@@ -245,6 +773,23 @@ press_save:
 
 	ret
 
+not_new_vector:
+	
+	cmp [readkey], byte 'w'
+	jz data_w
+	
+	cmp [readkey], byte 's'
+	jz data_s
+	
+	cmp [readkey], byte 'a'
+	jz data_a
+	
+	cmp [readkey], byte 'd'
+	jz data_d	
+		
+	jmp new_coord_is_accept
+	ret
+
 read_processing:
 
 ;read char
@@ -256,6 +801,9 @@ read_processing:
 	mov edx, 1	
 	int 80h	
 	
+	mov al, [readkey]
+	cmp [key_data], al
+	jz not_new_vector
 	
 	cmp [readkey], byte 'w'
 	jz press_save
@@ -301,7 +849,7 @@ set_and_draw_objects:
 	mov edx, 62
     int 80h
     
-    mov ecx, 19
+    mov ecx, 18
 border_body_draw:
 	push rcx
 	mov eax, 4 
@@ -344,9 +892,9 @@ loop border_body_draw
 	int 80h
 	
 ;snake arrey
-	mov [map+183], byte 3
-	mov [map+184], byte 2
-	mov [map+185], byte 1
+	mov [map+123], byte 3
+	mov [map+124], byte 2
+	mov [map+125], byte 1
 	
 
 ;snake draw
@@ -375,7 +923,7 @@ initialization_value:
 
 ;snake initialization
 	mov [snake_size], byte 3
-	mov [head_x], 	  byte 5
+	mov [head_x], 	  byte 7
 	mov [head_y], 	  byte 3
 
 ;apple initialization
@@ -397,31 +945,37 @@ initialization_value:
 	
 ;map initialization
 	mov [map], byte 127 ;127 is border - X
-	mov ecx, 60
+	mov ecx, 59
 first_row:
 	mov [map+ecx], byte 127
 loop first_row
 
 	mov ecx, 19
 row:
-	mov ax, 60
+	mov al, 60
 	mov ebx, ecx
-	mul bx
-	add ax, dx
+	mul bl
+	sub ax, 1
 	
 	mov[map+eax], byte 127
+	mov [map+eax+59], byte 127
 	
 	push rcx
 	
-		mov ecx, 60
+		mov ecx, 58
 	column:
 		mov ebx, eax
 		add ebx, ecx
-		mov [map+ebx], byte 127
+		mov [map+ebx], byte 0
 	loop column	
 	pop rcx	
 	loop row
-			
+	
+	mov ebx, 1199-60
+	mov ecx, 60
+last_row:
+	mov [map+ebx+ecx], byte 127
+loop last_row
 	ret
 
 
@@ -435,24 +989,23 @@ main:
     int 80h
 	
 	call echo_off
-	call canonical_off
+	call canonical_off	
 	call initialization_value
 	call set_and_draw_objects
-	
+
 repeat:
 	call read_processing;
-	;call offset_array;
-	;call offset_display;
+	call offset
 	
+	mov ecx, 100000
+str:
+	call echo_off
+loop str
+
 	jmp repeat
 	
 	
 exit:
-;	mov eax, 3
-;	mov ebx, 2
-;	mov ecx, num
-;	mov edx, 1	
-;	int 80h	
 	
 ;	mov eax, 4
 ;	mov ebx, 1
@@ -464,6 +1017,8 @@ exit:
 ;mov bl, 150
 ;div bl
 
+	call echo_on
+	
 	mov rax, 1
 	mov rbx, 0	
 	int 0x80
