@@ -35,9 +35,10 @@ section .bss
 ;apple
 	apple_x resb 1
 	apple_y resb 1
+	rand_num resb 2
 	
 ;map
-	map resb 60*20
+	map resb 60*25
 
 %include "const.txt"
 
@@ -164,8 +165,97 @@ draw_head:
 	int 80h
 	ret
 
+
+
+diaposon_ax:
+	mov bx, 1380
+	mul bx
+	mov bx, 127
+	mov dx, 0
+	div bx
+	add ax, 60
+	jmp ax_for_diaposon
+	ret
+	
+is_bord:
+	add al, 33
+	jmp ax_for_diaposon
+	ret
+
+
+new_apple:
+	RDTSC
+	xor edx, edx
+	xor rbx, rbx
+	
+	mov bx, ax
+	xor rax, rax
+	mov ax, bx
+
+ax_for_diaposon:
+	add ax, 500 
+	cmp ax, word 1440
+	jae diaposon_ax
+
+	
+	cmp [map+eax], byte 0
+	jnz is_bord
+	
+	
+	
+	
+	mov [map+eax], byte 126
+	
+	
+	mov bl, byte 60
+	div bl
+	add al, 1
+	add ah, 1
+	
+	mov [apple_y], al
+	mov [apple_y], ah
+	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, apple
+	mov edx, 1
+	int 80h
+	
+	ret
+
 new_snake_size:
 	add [snake_size], byte 1
+	
+	push rax
+	call new_apple
+	pop rax
+	
 	jmp start_offset
 	ret
 	
@@ -266,7 +356,7 @@ next_up_right:
 
 next_left_right:
 	dec eax
-	inc byte [map+eax]
+	add [map+eax], byte 1
 	jmp next_offset_right
 	ret
 
@@ -281,7 +371,6 @@ next_down_zero:
 	add eax, 60
 	mov [map+eax], byte 0
 	
-		inc eax
 	mov bl, byte 60
 	div bl
 	add al, 1
@@ -318,6 +407,8 @@ next_down_zero:
 	mov ecx, space
 	mov edx, 1
 	int 80h
+	
+	call cursor_in_head
 	
 	jmp offset_enabled
 	ret
@@ -326,7 +417,6 @@ next_up_zero:
 	sub eax, 60
 	mov [map+eax], byte 0
 	
-		inc eax
 	mov bl, byte 60
 	div bl
 	add al, 1
@@ -363,6 +453,8 @@ next_up_zero:
 	mov ecx, space
 	mov edx, 1
 	int 80h
+	
+	call cursor_in_head
 	
 	jmp offset_enabled
 	ret
@@ -371,7 +463,6 @@ next_left_zero:
 	dec eax
 	mov [map+eax], byte 0
 	
-	inc eax
 	mov bl, byte 60
 	div bl
 	add al, 1
@@ -408,6 +499,8 @@ next_left_zero:
 	mov ecx, space
 	mov edx, 1
 	int 80h
+	
+	call cursor_in_head
 	
 	jmp offset_enabled
 	ret
@@ -415,8 +508,7 @@ next_left_zero:
 next_right_zero:
 	inc eax
 	mov [map+eax], byte 0
-	
-	inc eax
+
 	mov bl, byte 60
 	div bl
 	add al, 1
@@ -453,6 +545,8 @@ next_right_zero:
 	mov ecx, space
 	mov edx, 1
 	int 80h
+	
+	call cursor_in_head
 	
 	jmp offset_enabled
 	ret
@@ -461,23 +555,27 @@ next_right_zero:
 
 
 offset_up:
-	sub ax, 60 ;offset right
+	xor ebx, ebx
+	xor ecx, ecx
+
 	mov [map+eax], byte 1
-	mov cl, [snake_size-1]
-	mov ebx, 1
+
+	mov cl, [snake_size]
+	dec cl
+	mov bl, 1
 	
 up_lp:
 	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_up
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_up
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_up
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_up
 	
 next_offset_up:
@@ -486,18 +584,16 @@ next_offset_up:
 
 	loop up_lp
 
-	inc ebx
-
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_zero
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_zero	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_zero
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_zero
 
 	jmp offset_enabled
@@ -506,42 +602,45 @@ next_offset_up:
 
 
 offset_down:
-	add ax, 60 ;offset right
+	xor ebx, ebx
+	xor ecx, ecx
+
 	mov [map+eax], byte 1
-	mov cl, [snake_size-1]
+
+	mov cl, [snake_size]
+	dec cl
+	mov bl, 1
 	
 down_lp:
 	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_down
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_down
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_down
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_down
 	
 next_offset_down:
 	
-	inc ebx	
+	inc bl
 
 	loop down_lp
 	
-	inc ebx
-	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_zero
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_zero	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_zero
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_zero
 	
 	jmp offset_enabled
@@ -549,42 +648,44 @@ next_offset_down:
 	ret
 
 offset_left:
+	xor ebx, ebx
+	xor ecx, ecx 
 
-	sub ax, 1 ;offset right
 	mov [map+eax], byte 1
-	mov cl, [snake_size-1]
+	
+	mov cl, [snake_size]
+	dec cl
+	mov bl, 1
 	
 left_lp:
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_left
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_left	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_left
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_left
 	
 next_offset_left:
 
-	inc ebx
+	inc bl
 
-	loop left_lp
+	loop left_lp	
 	
-	inc ebx
-	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_zero
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_zero	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_zero
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_zero
 
 	jmp offset_enabled
@@ -593,50 +694,83 @@ next_offset_left:
 
 
 offset_right:
-	add ax, 1 ;offset right
+	xor ebx, ebx
+	xor ecx, ecx 
+
 	mov [map+eax], byte 1
-	mov cl, [snake_size-1]
 	
+	mov cl, [snake_size]
+	dec cl
+	mov bl, 1
 	
 right_lp:
 	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_right
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_right	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_right
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_right
 	
 next_offset_right:
-	
-	inc ebx
+		
+	inc bl
 	
 	loop right_lp
 	
-	inc ebx
-	
-	cmp [map+eax+1], ebx
+	cmp [map+eax+1], bl
 	jz next_right_zero
 	
-	cmp [map+eax-1], ebx
+	cmp [map+eax-1], bl
 	jz next_left_zero	
 	
-	cmp [map+eax-60], ebx
+	cmp [map+eax-60], bl
 	jz next_up_zero
 	
-	cmp [map+eax+60], ebx
+	cmp [map+eax+60], bl
 	jz next_down_zero
 	
 	jmp offset_enabled
 	
 	ret
 	
+cursor_in_head:
+	xor eax, eax
+	mov al, [head_y]
+	mov ah, [head_x]
 	
+	mov dl, ah
+	
+	mov ah, 0
+	mov bl, 10
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+2], al
+	mov [gotoYYXX+3], ah
+	
+	mov al, dl
+	mov ah, 0
+	div bl
+	add ah, 48
+	add al, 48
+	
+	mov [gotoYYXX+5], al
+	mov [gotoYYXX+6], ah
+	
+	mov eax, 4
+	mov ebx, 2
+	mov ecx, gotoYYXX
+	mov edx, 8
+	int 80h	
+	
+	ret
 	
 offset:
 	call draw_head
@@ -648,10 +782,8 @@ offset:
 	mul bl
 	xor ebx,ebx
 	mov bl, [head_x]
-	dec bx
 	add ax, bx
-	sub ax, 1
-	
+	dec ax
 	
 	cmp [map+eax], byte 126
 	jz new_snake_size
@@ -659,30 +791,28 @@ offset:
 	cmp [map+eax], byte 0
 	jnz exit
 
+
 	
 start_offset:
 
-
-
 	
 	cmp [key_data], byte 'w'
-	;jz offset_up
+	jz offset_up
 	
 	cmp [key_data], byte 's'
-	;jz offset_down
+	jz offset_down
 	
 	cmp [key_data], byte 'a'
-	;jz offset_left
+	jz offset_left
 	
 	cmp [key_data], byte 'd'
-	;jz offset_right
+	jz offset_right
 		
 offset_enabled:	
 	
 	
 	
 	ret
-
 
 
 
@@ -849,7 +979,7 @@ set_and_draw_objects:
 	mov edx, 62
     int 80h
     
-    mov ecx, 18
+    mov ecx, 23
 border_body_draw:
 	push rcx
 	mov eax, 4 
@@ -868,7 +998,7 @@ loop border_body_draw
 
 
 ;apple arrey
-	mov [map+620-1], byte 126 ; 126 is apple - $
+	mov [map+594], byte 126 ; 126 is apple - $
 	
 	
 	
@@ -892,9 +1022,9 @@ loop border_body_draw
 	int 80h
 	
 ;snake arrey
-	mov [map+123], byte 3
-	mov [map+124], byte 2
-	mov [map+125], byte 1
+	mov [map+124], byte 3
+	mov [map+125], byte 2
+	mov [map+126], byte 1
 	
 
 ;snake draw
@@ -922,7 +1052,7 @@ loop border_body_draw
 initialization_value:
 
 ;snake initialization
-	mov [snake_size], byte 3
+	mov [snake_size], byte 5
 	mov [head_x], 	  byte 7
 	mov [head_y], 	  byte 3
 
@@ -950,15 +1080,15 @@ first_row:
 	mov [map+ecx], byte 127
 loop first_row
 
-	mov ecx, 19
+	mov ecx, 24
 row:
 	mov al, 60
 	mov ebx, ecx
 	mul bl
 	sub ax, 1
 	
-	mov[map+eax], byte 127
-	mov [map+eax+59], byte 127
+	mov[map+eax+1], byte 127
+	mov [map+eax+60], byte 127
 	
 	push rcx
 	
@@ -971,11 +1101,23 @@ row:
 	pop rcx	
 	loop row
 	
-	mov ebx, 1199-60
+	mov ebx, 25*60-1-60
 	mov ecx, 60
 last_row:
 	mov [map+ebx+ecx], byte 127
 loop last_row
+
+mov eax, 1
+mov ecx, 20
+
+left_bord:
+
+	mov[map+eax-1], byte 127
+	add ax, 60
+	
+	loop left_bord
+
+
 	ret
 
 
@@ -997,7 +1139,7 @@ repeat:
 	call read_processing;
 	call offset
 	
-	mov ecx, 100000
+	mov ecx, 50000
 str:
 	call echo_off
 loop str
@@ -1017,7 +1159,22 @@ exit:
 ;mov bl, 150
 ;div bl
 
+mov [readkey], byte 0
+exit_click:
+	
+	mov eax, 3
+	mov ebx, 2
+	mov ecx, readkey
+	mov edx, 1
+	int 80h
+	
+	cmp [readkey], byte 0
+	jz exit_click
+	
+	
 	call echo_on
+	
+	
 	
 	mov rax, 1
 	mov rbx, 0	
